@@ -31,15 +31,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	ifs, err := netIfs()
+	ifss, err := net.Interfaces()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
-	} else if ifs == nil {
+	}
+	ifs := selectIfs(ifss)
+	if ifs == nil {
 		fmt.Fprintf(os.Stderr, "no suitable network interfaces\n")
 		os.Exit(1)
 	}
-
 	local, err := ip(ifs)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -52,7 +53,6 @@ func main() {
 	errs := make(chan error)
 	go listen(local, remote, errs)
 	go send(addr(remote, port), errs)
-
 	// Wait for goroutines.
 	nroutines := 2
 	for i := 0; i < nroutines; i++ {
@@ -118,8 +118,9 @@ func addr(ip net.IP, port uint) string {
 	return net.JoinHostPort(fmt.Sprintf("%s", ip), fmt.Sprintf("%d", port))
 }
 
-// s is either an IP address or a host name. Returns nil if is s neither a
-// valid IP nor hostname. Returns error if host lookup fails.
+// parseHost returns the IP address represented by s. s is either a literal IP
+// address or a hostname. nil is returned if the hostname does not resolve to
+// any addresses,
 func parseHost(s string) (net.IP, error) {
 	if ip := net.ParseIP(s); ip != nil {
 		return ip, nil
@@ -134,21 +135,17 @@ func parseHost(s string) (net.IP, error) {
 	return addrs[0], nil
 }
 
-// netIfs returns a network interface that is up, running and not a loopback
-// interface. Returns nil if no such interface exists on the system.
-func netIfs() (*net.Interface, error) {
-	ifs, err := net.Interfaces()
-	if err != nil {
-		return nil, err
-	}
+// selectIfs returns a network interface from ifs that is up, running and not
+// a loopback interface. Returns nil if no such interface exists.
+func selectIfs(ifs []net.Interface) *net.Interface {
 	for _, i := range ifs {
 		if (i.Flags&net.FlagUp != 0) &&
 			(i.Flags&net.FlagRunning != 0) &&
 			(i.Flags&net.FlagLoopback == 0) {
-			return &i, nil
+			return &i
 		}
 	}
-	return nil, nil
+	return nil
 }
 
 // ip returns the first IP address bound to ifs or nil if none are bound.
