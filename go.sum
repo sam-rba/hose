@@ -1,0 +1,6 @@
+code.cloudfoundry.org/bytefmt v0.29.0 h1:QaKuXtEY+gcSd1kXgdBN5U8h3mYmTvI2XyNh/5jEXXk=
+code.cloudfoundry.org/bytefmt v0.29.0/go.mod h1:fVVUtTfimWCyT90RyJvmwZ0o8Q1d51RP8ByMvyceOXA=
+github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea h1:SXhTLE6pb6eld/v/cCndK0AMpt1wiVFb/YYmqB3/QG0=
+github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea/go.mod h1:WPnis/6cRcDZSUvVmezrxJPkiO87ThFYsoUiMwWNDJk=
+golang.org/x/sync v0.11.0 h1:GGz8+XQP4FvTTrjZPzNKTMFtSXH80RAzG+5ghFPgK9w=
+golang.org/x/sync v0.11.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
