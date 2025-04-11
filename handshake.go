@@ -74,7 +74,7 @@ func handshakeRecv(rhost string) error {
 	if err != nil {
 		return err
 	}
-	util.Logf("received public key from $s", conn.RemoteAddr())
+	util.Logf("received public key from %s", conn.RemoteAddr())
 
 	// Ask user to verify the fingerprint of the key.
 	ok, err := verifyPublicKey(conn.RemoteAddr(), rpubkey)
@@ -93,7 +93,11 @@ func handshakeRecv(rhost string) error {
 // It returns true if the user accepts the fingerprint, or false if they don't, or a non-nil error.
 func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
 	// Lookup human-friendly name of remote host, or fall back to the address.
-	hostname, err := lookupAddr(addr.String())
+	host, _, err := net.SplitHostPort(addr.String())
+	if err != nil {
+		return false, err
+	}
+	hostname, err := lookupAddr(host)
 	if err != nil {
 		return false, err
 	}
