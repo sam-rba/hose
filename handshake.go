@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"slices"
+	"strings"
 
 	"git.samanthony.xyz/hose/hosts"
 	"git.samanthony.xyz/hose/key"
@@ -142,13 +143,14 @@ func scan(responses []string) (string, error) {
 	if err := scanner.Err(); err != nil {
 		return "", err
 	}
-	response := scanner.Text()
+	response := strings.TrimSpace(scanner.Text())
 	for !slices.Contains(responses, response) {
+		util.Logf("Please enter one of %q", responses)
 		scanner.Scan()
 		if err := scanner.Err(); err != nil {
 			return "", err
 		}
-		response = scanner.Text()
+		response = strings.TrimSpace(scanner.Text())
 	}
 	return response, nil
 }
