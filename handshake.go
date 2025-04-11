@@ -37,7 +37,8 @@ func handshakeSend(rhost string) error {
 
 	raddr := net.JoinHostPort(rhost, port)
 	util.Logf("connecting to %s...", raddr)
-	conn, err := net.Dial(network, raddr)
+	var d net.Dialer
+	conn, err := d.Dial(network, raddr)
 	if err != nil {
 		return err
 	}
@@ -95,19 +96,14 @@ func handshakeRecv(rhost string) error {
 // verifyPublicKey asks the user to verify the public key of a remote host.
 // It returns true if the user accepts the key, or false if they don't, or a non-nil error.
 func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
-	// Lookup human-friendly name of remote host, or fall back to the address.
 	host, _, err := net.SplitHostPort(addr.String())
-	if err != nil {
-		return false, err
-	}
-	hostname, err := lookupAddr(host)
 	if err != nil {
 		return false, err
 	}
 
 	// Ask host to verify the key.
 	util.Logf("Public key of host %q: %x\nIs this the correct key (yes/[no])?",
-		hostname, pubkey[:])
+		host, pubkey[:])
 	response, err := scan([]string{"yes", "no", ""})
 	if err != nil {
 		return false, err
@@ -121,19 +117,6 @@ func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
 		return false, nil // default option
 	}
 	panic("unreachable")
-}
-
-// lookupAddr attempts to resolve the host name of an IP address.
-// If no names are mapped to the address, the address itself is returned.
-func lookupAddr(addr string) (string, error) {
-	hostNames, err := net.LookupAddr(addr)
-	if err != nil {
-		return "", err
-	}
-	if len(hostNames) > 0 {
-		return hostNames[0], nil
-	}
-	return addr, nil
 }
 
 // scan reads from stdin until the user enters one of the valid responses.
