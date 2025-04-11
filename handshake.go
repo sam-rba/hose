@@ -44,6 +44,7 @@ func handshake(rhost string) error {
 		}
 		return nil
 	})
+	go func() { group.Wait() }() // cancel the context.
 
 	select {
 	case err := <-errs:
