@@ -96,7 +96,7 @@ func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
 
 	// Ask host to verify fingerprint.
 	logf("Fingerprint of host %q: %s\nIs this the correct fingerprint (yes/[no])?",
-		hostname, fingerprint(pubkey))
+		hostname, fingerprint(pubkey[:]))
 	var response string
 	n, err := fmt.Scanln(&response)
 	if err != nil {
