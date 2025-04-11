@@ -1,6 +1,8 @@
 package key
 
 import (
+	"encoding/hex"
+	"fmt"
 	"io"
 	"os"
 )
@@ -21,9 +23,20 @@ func LoadPublicKey() ([32]byte, error) {
 	defer f.Close()
 
 	// Read key.
-	var pubkey [32]byte
-	if _, err := io.ReadFull(f, pubkey[:]); err != nil {
+	buf, err := io.ReadAll(f)
+	if err != nil {
 		return [32]byte{}, err
 	}
-	return pubkey, nil
+
+	// Decode.
+	var key [32]byte
+	if hex.DecodedLen(len(buf)) != len(key) {
+		return [32]byte{}, fmt.Errorf("malformed key: expected %d bytes; got %d",
+			len(key), hex.DecodedLen(len(buf)))
+	}
+	if _, err := hex.Decode(key[:], buf); err != nil {
+		return [32]byte{}, err
+	}
+
+	return key, nil
 }
