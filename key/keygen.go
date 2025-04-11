@@ -2,21 +2,9 @@ package key
 
 import (
 	crypto_rand "crypto/rand"
-	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
-
-	"github.com/adrg/xdg"
 	"golang.org/x/crypto/nacl/box"
-)
-
-var (
-	pubKeyFile                 = filepath.Join(xdg.DataHome, "hose", "pubkey")
-	pubKeyFileMode os.FileMode = 0644
-
-	privKeyFile                 = filepath.Join(xdg.DataHome, "hose", "privkey")
-	privKeyFileMode os.FileMode = 0600
+	"os"
 )
 
 // Generate generates a new public/private keypair. It stores the private key in the
@@ -56,44 +44,25 @@ func Generate() error {
 	return nil
 }
 
-// createFile creates a file with the specified permissions and returns it for writing.
-// It does not truncate an existing file. If the file already exists, an error is returned.
-func createFile(name string, mode os.FileMode) (*os.File, error) {
-	exists, err := fileExists(name)
+// Generate a keypair if it doesn't already exist.
+func generateIfNoExist() error {
+	pubExists, err := fileExists(pubKeyFile)
 	if err != nil {
-		return nil, err // unexpected error.
-	} else if exists {
-		return nil, errFileExists(name) // file exists; do not overwrite.
+		return err
 	}
-	// Does not exist; continue;
-
-	f, err := os.Create(name)
+	privExists, err := fileExists(privKeyFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if err := f.Chmod(mode); err != nil {
-		f.Close()
-		_ = os.Remove(name)
-		return nil, err
+	if pubExists && privExists {
+		// Keypair already exists.
+		return nil
+	} else if pubExists && !privExists {
+		return fmt.Errorf("found public key file but not private key file")
+	} else if privExists && !pubExists {
+		return fmt.Errorf("found private key file but not public key file")
 	}
-
-	return f, nil
-}
-
-// fileExists returns a nil error and true/false if a file does/doesn't exist.
-// If an error is encountered, a non-nil error is returned.
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil // file doesn't exist.
-	} else if err != nil {
-		return false, err // unexpected error.
-	}
-	return true, nil // file exists.
-}
-
-// errFileExists constructs a 'file already exists' error message.
-func errFileExists(path string) error {
-	return fmt.Errorf("%s: %s", os.ErrExist, path)
+	// Neither public nor private key file exists; generate new keypair.
+	return Generate()
 }

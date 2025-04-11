@@ -12,17 +12,18 @@ import (
 const (
 	port    = "60321"
 	network = "tcp"
-	usage   = "Usage: hose <-r | -s <rhost>>"
+	usage   = "Usage: hose <-handshake <rhost> | -r | -s <rhost>>"
 )
 
 var (
-	recvFlag = flag.Bool("r", false, "receive")
-	sendHost = flag.String("s", "", "send to remote host")
+	handshakeHost = flag.String("handshake", "", "exchange public keys with remote host")
+	recvFlag      = flag.Bool("r", false, "receive")
+	sendHost      = flag.String("s", "", "send to remote host")
 )
 
 func main() {
 	flag.Parse()
-	if *handshakeHost {
+	if *handshakeHost != "" {
 		if err := handshake(*handshakeHost); err != nil {
 			eprintf("%v\n", err)
 		}

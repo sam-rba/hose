@@ -2,6 +2,7 @@ package main
 
 import (
 	"golang.org/x/sync/errgroup"
+	"net"
 
 	"git.samanthony.xyz/hose/key"
 )
@@ -12,8 +13,8 @@ import (
 func handshake(rhost string) error {
 	logf("initiating handshake with %s...", rhost)
 	var group errgroup.Group
-	group.Go(handshakeSend(rhost))
-	group.Go(handshakeRecv(rhost))
+	group.Go(func() error { return handshakeSend(rhost) })
+	group.Go(func() error { return handshakeRecv(rhost) })
 	return group.Wait()
 }
 
