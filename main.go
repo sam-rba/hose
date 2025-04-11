@@ -16,18 +16,22 @@ const (
 )
 
 var (
-	r     = flag.Bool("r", false, "receive")
-	rhost = flag.String("s", "", "send to remote host")
+	recvFlag = flag.Bool("r", false, "receive")
+	sendHost = flag.String("s", "", "send to remote host")
 )
 
 func main() {
 	flag.Parse()
-	if *r {
+	if *handshakeHost {
+		if err := handshake(*handshakeHost); err != nil {
+			eprintf("%v\n", err)
+		}
+	} else if *recvFlag {
 		if err := recv(); err != nil {
 			eprintf("%v\n", err)
 		}
-	} else if *rhost != "" {
-		if err := send(*rhost); err != nil {
+	} else if *sendHost != "" {
+		if err := send(*sendHost); err != nil {
 			eprintf("%v\n", err)
 		}
 	} else {
