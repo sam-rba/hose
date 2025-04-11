@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"golang.org/x/sync/errgroup"
 	"io"
 	"net"
+	"os"
+	"slices"
 
 	"git.samanthony.xyz/hose/hosts"
 	"git.samanthony.xyz/hose/key"
@@ -104,26 +107,17 @@ func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
 	// Ask host to verify the key.
 	util.Logf("Public key of host %q: %x\nIs this the correct key (yes/[no])?",
 		hostname, pubkey[:])
-	var response string
-	n, err := fmt.Scanln(&response)
+	response, err := scan([]string{"yes", "no", ""})
 	if err != nil {
 		return false, err
-	}
-	for n > 0 && response != "yes" && response != "no" {
-		util.Logf("Please type 'yes' or 'no'")
-		n, err = fmt.Scanln(&response)
-		if err != nil {
-			return false, err
-		}
-	}
-	if n == 0 {
-		response = "no" // default response (pressed enter without typing anything)
 	}
 	switch response {
 	case "yes":
 		return true, nil
 	case "no":
 		return false, nil
+	case "":
+		return false, nil // default option
 	}
 	panic("unreachable")
 }
@@ -139,4 +133,22 @@ func lookupAddr(addr string) (string, error) {
 		return hostNames[0], nil
 	}
 	return addr, nil
+}
+
+// scan reads from stdin until the user enters one of the valid responses.
+func scan(responses []string) (string, error) {
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	response := scanner.Text()
+	for !slices.Contains(responses, response) {
+		scanner.Scan()
+		if err := scanner.Err(); err != nil {
+			return "", err
+		}
+		response = scanner.Text()
+	}
+	return response, nil
 }
