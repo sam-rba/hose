@@ -1,9 +1,9 @@
 package main
 
 import (
-	"golang/org/x/sync/errgroup"
+	"golang.org/x/sync/errgroup"
 
-	"key"
+	"git.samanthony.xyz/hose/key"
 )
 
 // handshake exchanges public keys with a remote host.
