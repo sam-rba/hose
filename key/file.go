@@ -6,6 +6,8 @@ import (
 	"github.com/adrg/xdg"
 	"os"
 	"path/filepath"
+
+	"git.samanthony.xyz/hose/util"
 )
 
 var (
@@ -14,6 +16,8 @@ var (
 
 	privKeyFile                 = filepath.Join(xdg.DataHome, "hose", "privkey")
 	privKeyFileMode os.FileMode = 0600
+
+	dirMode os.FileMode = 0755
 )
 
 // createFile creates a file with the specified permissions and returns it for writing.
@@ -27,11 +31,21 @@ func createFile(name string, mode os.FileMode) (*os.File, error) {
 	}
 	// Does not exist; continue;
 
+	util.Logf("creating file %s with mode %o", name, mode)
+
+	// Create directory.
+	dir := filepath.Dir(name)
+	if err := os.MkdirAll(dir, dirMode); err != nil {
+		return nil, err
+	}
+
+	// Create file.
 	f, err := os.Create(name)
 	if err != nil {
 		return nil, err
 	}
 
+	// Set mode.
 	if err := f.Chmod(mode); err != nil {
 		f.Close()
 		_ = os.Remove(name)
