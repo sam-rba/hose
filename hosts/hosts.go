@@ -17,8 +17,12 @@ var knownHostsFile = filepath.Join(xdg.DataHome, "hose", "known_hosts")
 
 // Set sets the public key of a remote host.
 // It replaces or creates an entry in the known hosts file.
-func Set(host net.Addr, pubkey [32]byte) error {
-	addr, err := netip.ParseAddr(host.String())
+func Set(hostport net.Addr, pubkey [32]byte) error {
+	host, _, err := net.SplitHostPort(hostport.String())
+	if err != nil {
+		return err
+	}
+	addr, err := netip.ParseAddr(host)
 	if err != nil {
 		return err
 	}
