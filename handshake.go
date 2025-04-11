@@ -13,7 +13,7 @@ import (
 )
 
 // handshake exchanges public keys with a remote host.
-// The user is asked to verify the fingerprint of the received key
+// The user is asked to verify the received key
 // before it is saved in the known hosts file.
 func handshake(rhost string) error {
 	util.Logf("initiating handshake with %s...", rhost)
@@ -49,8 +49,7 @@ func handshakeSend(rhost string) error {
 }
 
 // handshakeRecv receives the public key of a remote host.
-// The user is asked to verify the fingerprint of the key before
-// it is saved to the known hosts file.
+// The user is asked to verify the key before it is saved to the known hosts file.
 func handshakeRecv(rhost string) error {
 	// Listen for connection.
 	laddr := net.JoinHostPort("", port)
@@ -76,21 +75,21 @@ func handshakeRecv(rhost string) error {
 	}
 	util.Logf("received public key from %s", conn.RemoteAddr())
 
-	// Ask user to verify the fingerprint of the key.
+	// Ask user to verify the key.
 	ok, err := verifyPublicKey(conn.RemoteAddr(), rpubkey)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		// User rejected the fingerprint.
+		// User rejected the key.
 		return fmt.Errorf("host key verification failed")
 	}
 
 	return hosts.Set(conn.RemoteAddr(), rpubkey)
 }
 
-// verifyPublicKey asks the user to verify the fingerprint of a public key belonging to a remote host.
-// It returns true if the user accepts the fingerprint, or false if they don't, or a non-nil error.
+// verifyPublicKey asks the user to verify the public key of a remote host.
+// It returns true if the user accepts the key, or false if they don't, or a non-nil error.
 func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
 	// Lookup human-friendly name of remote host, or fall back to the address.
 	host, _, err := net.SplitHostPort(addr.String())
@@ -102,9 +101,9 @@ func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
 		return false, err
 	}
 
-	// Ask host to verify fingerprint.
-	util.Logf("Fingerprint of host %q: %x\nIs this the correct fingerprint (yes/[no])?",
-		hostname, fingerprint(pubkey[:]))
+	// Ask host to verify the key.
+	util.Logf("Public key of host %q: %x\nIs this the correct key (yes/[no])?",
+		hostname, pubkey[:])
 	var response string
 	n, err := fmt.Scanln(&response)
 	if err != nil {
