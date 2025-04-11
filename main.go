@@ -31,7 +31,7 @@ func main() {
 			eprintf("%v\n", err)
 		}
 	} else {
-		logf("%s\n", usage)
+		logf("%s", usage)
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -45,33 +45,33 @@ func recv() error {
 		return err
 	}
 	defer ln.Close()
-	logf("listening on %s\n", laddr)
+	logf("listening on %s", laddr)
 
 	conn, err := ln.Accept()
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	logf("accepted connection from %s\n", conn.RemoteAddr())
+	logf("accepted connection from %s", conn.RemoteAddr())
 
 	n, err := io.Copy(os.Stdout, conn)
-	logf("received %.2f\n", units.Bytes(n)*units.B)
+	logf("received %.2f", units.Bytes(n)*units.B)
 	return err
 }
 
 // send pipes data from stdin to the remote host.
 func send(rhost string) error {
 	raddr := net.JoinHostPort(rhost, port)
-	logf("connecting to %s...\n", raddr)
+	logf("connecting to %s...", raddr)
 	conn, err := net.Dial(network, raddr)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	logf("connected to %s\n", raddr)
+	logf("connected to %s", raddr)
 
 	n, err := io.Copy(conn, os.Stdin)
-	logf("sent %.2f\n", units.Bytes(n)*units.B)
+	logf("sent %.2f", units.Bytes(n)*units.B)
 	return err
 }
 
@@ -81,5 +81,6 @@ func eprintf(format string, a ...any) {
 }
 
 func logf(format string, a ...any) {
-	fmt.Fprintf(os.Stderr, format, a...)
+	msg := fmt.Sprintf(format, a...)
+	fmt.Fprintf(os.Stderr, "%s\n", msg)
 }
