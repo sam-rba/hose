@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"golang.org/x/sync/errgroup"
 	"io"
 	"net"
 
+	"git.samanthony.xyz/hose/util"
+	"git.samanthony.xyz/hose/hosts"
 	"git.samanthony.xyz/hose/key"
 )
 
@@ -13,8 +16,8 @@ import (
 // The user is asked to verify the fingerprint of the received key
 // before it is saved in the known hosts file.
 func handshake(rhost string) error {
-	logf("initiating handshake with %s...", rhost)
-	var group errgroup.Group
+	util.Logf("initiating handshake with %s...", rhost)
+	group, _ := errgroup.WithContext(context.Background())
 	group.Go(func() error { return handshakeSend(rhost) })
 	group.Go(func() error { return handshakeRecv(rhost) })
 	return group.Wait()
@@ -22,25 +25,26 @@ func handshake(rhost string) error {
 
 // handshakeSend sends the local public key to a remote host.
 func handshakeSend(rhost string) error {
+	util.Logf("loading public key...")
 	pubkey, err := key.LoadPublicKey()
 	if err != nil {
 		return err
 	}
 
 	raddr := net.JoinHostPort(rhost, port)
-	logf("connecting to %s...", raddr)
+	util.Logf("connecting to %s...", raddr)
 	conn, err := net.Dial(network, raddr)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	logf("connected to %s", raddr)
+	util.Logf("connected to %s", raddr)
 
 	if _, err := conn.Write(pubkey[:]); err != nil {
 		return err
 	}
 
-	logf("sent public key to %s", rhost)
+	util.Logf("sent public key to %s", rhost)
 	return nil
 }
 
@@ -55,14 +59,14 @@ func handshakeRecv(rhost string) error {
 		return err
 	}
 	defer ln.Close()
-	logf("listening on %s", laddr)
+	util.Logf("listening on %s", laddr)
 
 	conn, err := ln.Accept()
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	logf("accepted connection from %s", conn.RemoteAddr())
+	util.Logf("accepted connection from %s", conn.RemoteAddr())
 
 	// Receive public key from remote host.
 	var rpubkey [32]byte
@@ -70,7 +74,7 @@ func handshakeRecv(rhost string) error {
 	if err != nil {
 		return err
 	}
-	logf("received public key from $s", conn.RemoteAddr())
+	util.Logf("received public key from $s", conn.RemoteAddr())
 
 	// Ask user to verify the fingerprint of the key.
 	ok, err := verifyPublicKey(conn.RemoteAddr(), rpubkey)
@@ -82,7 +86,7 @@ func handshakeRecv(rhost string) error {
 		return fmt.Errorf("host key verification failed")
 	}
 
-	return addKnownHost(conn.RemoteAddr(), rpubkey)
+	return hosts.Set(conn.RemoteAddr(), rpubkey)
 }
 
 // verifyPublicKey asks the user to verify the fingerprint of a public key belonging to a remote host.
@@ -95,7 +99,7 @@ func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
 	}
 
 	// Ask host to verify fingerprint.
-	logf("Fingerprint of host %q: %x\nIs this the correct fingerprint (yes/[no])?",
+	util.Logf("Fingerprint of host %q: %x\nIs this the correct fingerprint (yes/[no])?",
 		hostname, fingerprint(pubkey[:]))
 	var response string
 	n, err := fmt.Scanln(&response)
@@ -103,7 +107,7 @@ func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
 		return false, err
 	}
 	for n > 0 && response != "yes" && response != "no" {
-		logf("Please type 'yes' or 'no'")
+		util.Logf("Please type 'yes' or 'no'")
 		n, err = fmt.Scanln(&response)
 		if err != nil {
 			return false, err

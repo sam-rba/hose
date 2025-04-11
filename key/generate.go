@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"golang.org/x/crypto/nacl/box"
 	"os"
+
+	"git.samanthony.xyz/hose/util"
 )
 
 // Generate generates a new public/private keypair. It stores the private key in the
 // private key file and the public key in the public key file.  If either of the key
 // files already exist, they will not be overwritten; instead an error will be returned.
 func Generate() error {
+	util.Logf("generating new keypair...")
+
 	// Create public key file.
 	pubFile, err := createFile(pubKeyFile, pubKeyFileMode)
 	if err != nil {
