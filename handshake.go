@@ -7,9 +7,9 @@ import (
 	"io"
 	"net"
 
-	"git.samanthony.xyz/hose/util"
 	"git.samanthony.xyz/hose/hosts"
 	"git.samanthony.xyz/hose/key"
+	"git.samanthony.xyz/hose/util"
 )
 
 // handshake exchanges public keys with a remote host.
