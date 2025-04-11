@@ -54,7 +54,7 @@ func Load() (map[netip.Addr][32]byte, error) {
 	for line := 1; scanner.Scan(); line++ {
 		host, pubkey, err := parseHostKeyPair(scanner.Text())
 		if err != nil {
-			return hosts, fmt.Errorf("error parsing known hosts file: %s:%d: %v", err)
+			return hosts, fmt.Errorf("error parsing known hosts file: %s:%d: %v", knownHostsFile, line, err)
 		}
 		if _, ok := hosts[host]; ok {
 			return hosts, fmt.Errorf("duplicate entry in known hosts file: %s", host)
@@ -97,7 +97,7 @@ func Store(hosts map[netip.Addr][32]byte) error {
 	defer f.Close()
 
 	for host, key := range hosts {
-		fmt.Fprintf(f, "%s %x", host, key)
+		fmt.Fprintf(f, "%s %x\n", host, key)
 	}
 
 	return nil
