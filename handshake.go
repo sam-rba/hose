@@ -3,10 +3,12 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"golang.org/x/sync/errgroup"
 	"io"
 	"net"
+	"net/netip"
 	"os"
 	"slices"
 	"strings"
@@ -20,6 +22,15 @@ import (
 const (
 	timeout       = 1 * time.Minute
 	retryInterval = 500 * time.Millisecond
+)
+
+var errHostKey = errors.New("host key verification failed")
+
+type keyType string
+
+const (
+	boxPublicKey keyType = "Public encryption key"
+	sigPublicKey         = "Public signature verification key"
 )
 
 // handshake exchanges public keys with a remote host.
@@ -54,10 +65,10 @@ func handshake(rhost string) error {
 	}
 }
 
-// handshakeSend sends the local public key to a remote host.
+// handshakeSend sends the local public box (encryption) key to a remote host.
 func handshakeSend(rhost string) error {
-	util.Logf("loading public key...")
-	pubkey, err := key.LoadPublicKey()
+	util.Logf("loading public encryption key...")
+	pubBoxkey, err := key.LoadBoxPublicKey()
 	if err != nil {
 		return err
 	}
@@ -71,11 +82,11 @@ func handshakeSend(rhost string) error {
 	defer conn.Close()
 	util.Logf("connected to %s", raddr)
 
-	if _, err := conn.Write(pubkey[:]); err != nil {
+	if _, err := conn.Write(pubBoxkey[:]); err != nil {
 		return err
 	}
 
-	util.Logf("sent public key to %s", rhost)
+	util.Logf("sent public encryption key to %s", rhost)
 	return nil
 }
 
@@ -115,38 +126,58 @@ func handshakeRecv(rhost string) error {
 	defer conn.Close()
 	util.Logf("accepted connection from %s", conn.RemoteAddr())
 
-	// Receive public key from remote host.
-	var rpubkey [32]byte
-	_, err = io.ReadFull(conn, rpubkey[:])
+	// Receive public box (encryption) key from remote host.
+	var rBoxPubKey key.BoxPublicKey
+	_, err = io.ReadFull(conn, rBoxPubKey[:])
 	if err != nil {
 		return err
 	}
-	util.Logf("received public key from %s", conn.RemoteAddr())
+	util.Logf("received public encryption key from %s", conn.RemoteAddr())
 
-	// Ask user to verify the key.
-	ok, err := verifyPublicKey(conn.RemoteAddr(), rpubkey)
+	// Receive public signature verification key from remote host.
+	var rSigPubKey key.SigPublicKey
+	_, err = io.ReadFull(conn, rSigPubKey[:])
 	if err != nil {
 		return err
 	}
-	if !ok {
-		// User rejected the key.
-		return fmt.Errorf("host key verification failed")
+	util.Logf("receive public signature verification key from %s", conn.RemoteAddr())
+
+	// Ask user to verify the keys.
+	host, _, err := net.SplitHostPort(conn.RemoteAddr().String())
+	if err != nil {
+		return err
+	}
+	// Verify box key.
+	ok, err := verifyKey(host, rBoxPubKey[:], boxPublicKey)
+	if err != nil {
+		return err
+	}
+	if !ok { // user rejected the key.
+		return errHostKey
+	}
+	// Verify signature verification key.
+	ok, err = verifyKey(host, rSigPubKey[:], sigPublicKey)
+	if err != nil {
+		return err
+	}
+	if !ok { // user rejected the key.
+		return errHostKey
 	}
 
-	return hosts.Set(conn.RemoteAddr(), rpubkey)
+	// Save in known hosts file.
+	rAddr, err := netip.ParseAddr(conn.RemoteAddr().String())
+	if err != nil {
+		return err
+	}
+	return hosts.Add(hosts.Host{rAddr, rBoxPubKey, rSigPubKey})
 }
 
-// verifyPublicKey asks the user to verify the public key of a remote host.
+// verifyKey asks the user to verify a key received from a remote host.
 // It returns true if the user accepts the key, or false if they don't, or a non-nil error.
-func verifyPublicKey(addr net.Addr, pubkey [32]byte) (bool, error) {
-	host, _, err := net.SplitHostPort(addr.String())
-	if err != nil {
-		return false, err
-	}
-
+func verifyKey(host string, key []byte, kt keyType) (bool, error) {
 	// Ask host to verify the key.
-	util.Logf("Public key of host %q: %x\nIs this the correct key (yes/[no])?",
-		host, pubkey[:])
+	util.Logf("%s key of host %q: %x\nIs this the correct key (yes/[no])?",
+		kt, host, key[:])
 	response, err := scan([]string{"yes", "no", ""})
 	if err != nil {
 		return false, err
