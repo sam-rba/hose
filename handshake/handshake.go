@@ -69,8 +69,12 @@ func Handshake(rhost string) error {
 
 // send sends the local public box (encryption) key to a remote host.
 func send(rhost string) error {
-	util.Logf("loading public encryption key...")
 	pubBoxkey, err := key.LoadBoxPublicKey()
+	if err != nil {
+		return err
+	}
+
+	pubSigKey, err := key.LoadSigPublicKey()
 	if err != nil {
 		return err
 	}
@@ -87,8 +91,11 @@ func send(rhost string) error {
 	if _, err := conn.Write(pubBoxkey[:]); err != nil {
 		return err
 	}
+	if _, err := conn.Write(pubSigKey[:]); err != nil {
+		return err
+	}
 
-	util.Logf("sent public encryption key to %s", rhost)
+	util.Logf("sent public keys to %s", rhost)
 	return nil
 }
 
