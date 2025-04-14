@@ -11,13 +11,19 @@ import (
 )
 
 var (
-	pubKeyFile                 = filepath.Join(xdg.DataHome, "hose", "pubkey")
-	pubKeyFileMode os.FileMode = 0644
+	dataDir = "hose"
 
-	privKeyFile                 = filepath.Join(xdg.DataHome, "hose", "privkey")
-	privKeyFileMode os.FileMode = 0600
+	// Encryption/decryption keypair for NaCl box operations.
+	boxPubKeyFile  = filepath.Join(xdg.DataHome, dataDir, "box_pub.key")
+	boxPrivKeyFile = filepath.Join(xdg.DataHome, dataDir, "box_priv.key")
 
-	dirMode os.FileMode = 0755
+	// Sign/verify keypair for NaCl signing operations.
+	sigPubKeyFile  = filepath.Join(xdg.DataHome, dataDir, "sig_pub.key")
+	sigPrivKeyFile = filepath.Join(xdg.DataHome, dataDir, "sig_priv.key")
+
+	dirMode      os.FileMode = 0755
+	pubFileMode  os.FileMode = 0644
+	privFileMode os.FileMode = 0600
 )
 
 // createFile creates a file with the specified permissions and returns it for writing.

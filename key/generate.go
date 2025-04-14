@@ -10,24 +10,25 @@ import (
 	"git.samanthony.xyz/hose/util"
 )
 
-// Generate generates a new public/private keypair. It stores the private key in the
-// private key file and the public key in the public key file.  If either of the key
-// files already exist, they will not be overwritten; instead an error will be returned.
-func Generate() error {
-	util.Logf("generating new keypair...")
+// generateBoxKeypair generates a new public/private keypair for NaCl box
+// (encryption/decryption) operations.  It stores the private key in the private box
+// key file and the public box key in the public key file.  If either of the key files
+// already exist, they will not be overwritten; instead an error will be returned.
+func generateBoxKeypair() error {
+	util.Logf("generating new encryption/decryption keypair...")
 
 	// Create public key file.
-	pubFile, err := createFile(pubKeyFile, pubKeyFileMode)
+	pubFile, err := createFile(boxPubKeyFile, pubFileMode)
 	if err != nil {
 		return err
 	}
 	defer pubFile.Close()
 
 	// Create private key file.
-	privFile, err := createFile(privKeyFile, privKeyFileMode)
+	privFile, err := createFile(boxPrivKeyFile, privFileMode)
 	if err != nil {
 		pubFile.Close()
-		_ = os.Remove(pubKeyFile)
+		_ = os.Remove(boxPubKeyFile)
 		return err
 	}
 	defer privFile.Close()
@@ -53,13 +54,13 @@ func Generate() error {
 	return nil
 }
 
-// Generate a keypair if it doesn't already exist.
-func generateIfNoExist() error {
-	pubExists, err := fileExists(pubKeyFile)
+// generateBoxKeypairIfNotExist generates a NaCal box keypair if it doesn't already exist.
+func generateBoxKeypairIfNotExist() error {
+	pubExists, err := fileExists(boxPubKeyFile)
 	if err != nil {
 		return err
 	}
-	privExists, err := fileExists(privKeyFile)
+	privExists, err := fileExists(boxPrivKeyFile)
 	if err != nil {
 		return err
 	}
@@ -73,5 +74,5 @@ func generateIfNoExist() error {
 		return fmt.Errorf("found private key file but not public key file")
 	}
 	// Neither public nor private key file exists; generate new keypair.
-	return Generate()
+	return generateBoxKeypair()
 }

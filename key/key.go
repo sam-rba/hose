@@ -7,33 +7,41 @@ import (
 	"os"
 )
 
-// LoadKeypair reads the public and private keys from disc,
+// BoxPublicKey is a public NaCl box key.
+type BoxPublicKey [32]byte
+
+// BoxPrivateKey is a private NaCl box key.
+type BoxPrivateKey [32]byte
+
+// LoadBoxKeypair reads the public and private NaCl box keys from disc,
 // or generates a new keypair if it does not already exist.
-func LoadKeypair() (public, private [32]byte, err error) {
+// These keys can be used for NaCl box (encryption/decryption) operations.
+func LoadBoxKeypair() (pub BoxPublicKey, priv BoxPrivateKey, err error) {
 	// Generate a keypair if it doesn't already exist.
-	err = generateIfNoExist()
+	err = generateBoxKeypairIfNotExist()
 	if err != nil {
 		return
 	}
 
-	public, err = loadKey(pubKeyFile)
+	pub, err = loadBoxKey(boxPubKeyFile)
 	if err != nil {
 		return
 	}
 
-	private, err = loadKey(privKeyFile)
+	priv, err = loadBoxKey(boxPrivKeyFile)
 
 	return
 }
 
-// LoadPublicKey reads the public key from disc, or generates a new keypair
-// if it does not already exist.
-func LoadPublicKey() ([32]byte, error) {
-	return loadKey(pubKeyFile)
+// LoadBoxPublicKey reads the public NaCl box key from disc,
+// or generates a new keypair if it does not already exist.
+func LoadBoxPublicKey() (BoxPublicKey, error) {
+	key, err := loadBoxKey(boxPubKeyFile)
+	return BoxPublicKey(key), err
 }
 
-// loadKey reads a key (public or private) from the specified file.
-func loadKey(filename string) ([32]byte, error) {
+// loadBoxKey reads a NaCl box key (public or private)  from the specified file.
+func loadBoxKey(filename string) ([32]byte, error) {
 	// Open file.
 	f, err := os.Open(filename)
 	if err != nil {
