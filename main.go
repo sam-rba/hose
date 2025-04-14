@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 
+	"git.samanthony.xyz/hose/handshake"
 	"git.samanthony.xyz/hose/util"
 )
 
@@ -25,7 +26,7 @@ var (
 func main() {
 	flag.Parse()
 	if *handshakeHost != "" {
-		if err := handshake(*handshakeHost); err != nil {
+		if err := handshake.Handshake(*handshakeHost); err != nil {
 			util.Eprintf("%v\n", err)
 		}
 	} else if *recvFlag {

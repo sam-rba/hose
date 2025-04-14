@@ -1,4 +1,4 @@
-package main
+package handshake
 
 import (
 	"bufio"
@@ -20,6 +20,9 @@ import (
 )
 
 const (
+	port    = "60322"
+	network = "tcp"
+
 	timeout       = 1 * time.Minute
 	retryInterval = 500 * time.Millisecond
 )
@@ -33,10 +36,9 @@ const (
 	sigPublicKey         = "Public signature verification key"
 )
 
-// handshake exchanges public keys with a remote host.
-// The user is asked to verify the received key
-// before it is saved in the known hosts file.
-func handshake(rhost string) error {
+// Handshake exchanges public keys with a remote host.
+// The user is asked to verify the received keys before they are saved in the known hosts file.
+func Handshake(rhost string) error {
 	util.Logf("initiating handshake with %s...", rhost)
 
 	errs := make(chan error, 2)
@@ -44,13 +46,13 @@ func handshake(rhost string) error {
 
 	group, ctx := errgroup.WithContext(context.Background())
 	group.Go(func() error {
-		if err := handshakeSend(rhost); err != nil {
+		if err := send(rhost); err != nil {
 			errs <- err
 		}
 		return nil
 	})
 	group.Go(func() error {
-		if err := handshakeRecv(rhost); err != nil {
+		if err := receive(rhost); err != nil {
 			errs <- err
 		}
 		return nil
@@ -65,8 +67,8 @@ func handshake(rhost string) error {
 	}
 }
 
-// handshakeSend sends the local public box (encryption) key to a remote host.
-func handshakeSend(rhost string) error {
+// send sends the local public box (encryption) key to a remote host.
+func send(rhost string) error {
 	util.Logf("loading public encryption key...")
 	pubBoxkey, err := key.LoadBoxPublicKey()
 	if err != nil {
@@ -107,9 +109,9 @@ func dialWithTimeout(network, address string, timeout time.Duration) (net.Conn, 
 	}
 }
 
-// handshakeRecv receives the public key of a remote host.
-// The user is asked to verify the key before it is saved to the known hosts file.
-func handshakeRecv(rhost string) error {
+// receive receives the public keys of a remote host.
+// The user is asked to verify the keys before they are saved to the known hosts file.
+func receive(rhost string) error {
 	// Listen for connection.
 	laddr := net.JoinHostPort("", port)
 	ln, err := net.Listen(network, laddr)
