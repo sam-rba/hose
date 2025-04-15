@@ -14,17 +14,10 @@ type BoxPublicKey [32]byte
 // BoxPrivateKey is a private NaCl box key.
 type BoxPrivateKey [32]byte
 
-// SigPublicKey is a public NaCl signature verification key.
-type SigPublicKey [32]byte
-
-// SigPrivateKey is a private NaCl signing key.
-type SigPrivateKey [64]byte
-
 // LoadBoxKeypair reads the public and private NaCl box keys from disc,
 // or generates a new keypair if it does not already exist.
 // These keys can be used for NaCl box (encryption/decryption) operations.
 func LoadBoxKeypair() (pub BoxPublicKey, priv BoxPrivateKey, err error) {
-	// Generate a keypair if it doesn't already exist.
 	err = generateBoxKeypairIfNotExist()
 	if err != nil {
 		return
@@ -43,6 +36,10 @@ func LoadBoxKeypair() (pub BoxPublicKey, priv BoxPrivateKey, err error) {
 // LoadBoxPublicKey reads the public NaCl box key from disc,
 // or generates a new keypair if it does not already exist.
 func LoadBoxPublicKey() (BoxPublicKey, error) {
+	err := generateBoxKeypairIfNotExist()
+	if err != nil {
+		return BoxPublicKey{}, err
+	}
 	key, err := loadBoxKey(boxPubKeyFile)
 	return BoxPublicKey(key), err
 }
@@ -77,8 +74,4 @@ func loadBoxKey(filename string) ([32]byte, error) {
 
 func (bpk1 BoxPublicKey) Compare(bpk2 BoxPublicKey) int {
 	return bytes.Compare(bpk1[:], bpk2[:])
-}
-
-func (spk1 SigPublicKey) Compare(spk2 SigPublicKey) int {
-	return bytes.Compare(spk1[:], spk2[:])
 }
