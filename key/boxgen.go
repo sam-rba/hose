@@ -18,14 +18,14 @@ func generateBoxKeypair() error {
 	util.Logf("generating new encryption/decryption keypair...")
 
 	// Create public key file.
-	pubFile, err := createFile(boxPubKeyFile, pubFileMode)
+	pubFile, err := createFileIfNotExist(boxPubKeyFile, pubFileMode)
 	if err != nil {
 		return err
 	}
 	defer pubFile.Close()
 
 	// Create private key file.
-	privFile, err := createFile(boxPrivKeyFile, privFileMode)
+	privFile, err := createFileIfNotExist(boxPrivKeyFile, privFileMode)
 	if err != nil {
 		pubFile.Close()
 		_ = os.Remove(boxPubKeyFile)

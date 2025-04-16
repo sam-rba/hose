@@ -26,9 +26,9 @@ var (
 	privFileMode os.FileMode = 0600
 )
 
-// createFile creates a file with the specified permissions and returns it for writing.
+// createFileIfNotExist creates a file with the specified permissions and returns it for writing.
 // It does not truncate an existing file. If the file already exists, an error is returned.
-func createFile(name string, mode os.FileMode) (*os.File, error) {
+func createFileIfNotExist(name string, mode os.FileMode) (*os.File, error) {
 	exists, err := fileExists(name)
 	if err != nil {
 		return nil, err // unexpected error.
