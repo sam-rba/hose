@@ -156,8 +156,12 @@ func receive(rhost string) error {
 	if err != nil {
 		return err
 	}
+	raddr, err := netip.ParseAddr(host)
+	if err != nil {
+		return err
+	}
 	// Verify box key.
-	ok, err := verifyKey(host, rBoxPubKey[:], boxPublicKey)
+	ok, err := verifyKey(raddr, rBoxPubKey[:], boxPublicKey)
 	if err != nil {
 		return err
 	}
@@ -165,7 +169,7 @@ func receive(rhost string) error {
 		return errHostKey
 	}
 	// Verify signature verification key.
-	ok, err = verifyKey(host, rSigPubKey[:], sigPublicKey)
+	ok, err = verifyKey(raddr, rSigPubKey[:], sigPublicKey)
 	if err != nil {
 		return err
 	}
@@ -174,16 +178,12 @@ func receive(rhost string) error {
 	}
 
 	// Save in known hosts file.
-	rAddr, err := netip.ParseAddr(conn.RemoteAddr().String())
-	if err != nil {
-		return err
-	}
-	return hosts.Add(hosts.Host{rAddr, rBoxPubKey, rSigPubKey})
+	return hosts.Add(hosts.Host{raddr, rBoxPubKey, rSigPubKey})
 }
 
 // verifyKey asks the user to verify a key received from a remote host.
 // It returns true if the user accepts the key, or false if they don't, or a non-nil error.
-func verifyKey(host string, key []byte, kt keyType) (bool, error) {
+func verifyKey(host netip.Addr, key []byte, kt keyType) (bool, error) {
 	// Ask host to verify the key.
 	util.Logf("%s key of host %q: %x\nIs this the correct key (yes/[no])?",
 		kt, host, key[:])
