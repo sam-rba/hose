@@ -2,7 +2,6 @@ package key
 
 import (
 	crypto_rand "crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"golang.org/x/crypto/nacl/box"
 	"golang.org/x/crypto/nacl/sign"
@@ -39,13 +38,11 @@ func generateKeypair(generate keyGenerator, pubFileName, privFileName string) er
 	}
 
 	// Write keypair to files.
-	buf := make([]byte, hex.EncodedLen(len(pubkey)))
-	hex.Encode(buf, pubkey)
+	buf := encode(pubkey)
 	if _, err := pubFile.Write(buf); err != nil {
 		return err
 	}
-	buf = make([]byte, hex.EncodedLen(len(privkey)))
-	hex.Encode(buf, privkey)
+	buf = encode(privkey)
 	if _, err := privFile.Write(buf); err != nil {
 		return err
 	}
