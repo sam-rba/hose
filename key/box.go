@@ -60,18 +60,21 @@ func loadBoxKey(filename string) ([32]byte, error) {
 	}
 
 	// Decode key.
+	return decodeBoxKey(buf)
+}
+
+func (bpk1 BoxPublicKey) Compare(bpk2 BoxPublicKey) int {
+	return bytes.Compare(bpk1[:], bpk2[:])
+}
+
+func decodeBoxKey(buf []byte) ([32]byte, error) {
 	var key [32]byte
 	if hex.DecodedLen(len(buf)) != len(key) {
-		return [32]byte{}, fmt.Errorf("malformed key: expected %d bytes; got %d",
+		return [32]byte{}, fmt.Errorf("malformed box key: expected %d bytes; got %d",
 			len(key), hex.DecodedLen(len(buf)))
 	}
 	if _, err := hex.Decode(key[:], buf); err != nil {
 		return [32]byte{}, err
 	}
-
 	return key, nil
-}
-
-func (bpk1 BoxPublicKey) Compare(bpk2 BoxPublicKey) int {
-	return bytes.Compare(bpk1[:], bpk2[:])
 }

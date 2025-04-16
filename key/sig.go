@@ -37,18 +37,21 @@ func LoadSigPublicKey() (SigPublicKey, error) {
 	}
 
 	// Decode key.
+	return decodeSigPublicKey(buf)
+}
+
+func (spk1 SigPublicKey) Compare(spk2 SigPublicKey) int {
+	return bytes.Compare(spk1[:], spk2[:])
+}
+
+func decodeSigPublicKey(buf []byte) (SigPublicKey, error) {
 	var key SigPublicKey
 	if hex.DecodedLen(len(buf)) != len(key) {
-		return SigPublicKey{}, fmt.Errorf("malformed key: expected %d bytes; got %d",
+		return SigPublicKey{}, fmt.Errorf("malformed signature verification key: expected %d bytes; got %d",
 			len(key), hex.DecodedLen(len(buf)))
 	}
 	if _, err := hex.Decode(key[:], buf); err != nil {
 		return SigPublicKey{}, err
 	}
-
 	return key, nil
-}
-
-func (spk1 SigPublicKey) Compare(spk2 SigPublicKey) int {
-	return bytes.Compare(spk1[:], spk2[:])
 }
