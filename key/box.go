@@ -67,6 +67,11 @@ func (bpk1 BoxPublicKey) Compare(bpk2 BoxPublicKey) int {
 	return bytes.Compare(bpk1[:], bpk2[:])
 }
 
+func DecodeBoxPublicKey(buf []byte) (BoxPublicKey, error) {
+	key, err := decodeBoxKey(buf)
+	return BoxPublicKey(key), err
+}
+
 func decodeBoxKey(buf []byte) ([32]byte, error) {
 	var key [32]byte
 	if hex.DecodedLen(len(buf)) != len(key) {

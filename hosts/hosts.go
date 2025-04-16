@@ -2,7 +2,7 @@ package hosts
 
 import (
 	"bufio"
-	"encoding/hex"
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/adrg/xdg"
@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"git.samanthony.xyz/hose/key"
 	"git.samanthony.xyz/hose/util"
@@ -57,7 +56,7 @@ func Load() ([]Host, error) {
 
 	scanner := bufio.NewScanner(f)
 	for line := 1; scanner.Scan(); line++ {
-		host, err := parseHost(scanner.Text())
+		host, err := parseHost(scanner.Bytes())
 		if err != nil {
 			return hosts, fmt.Errorf("error parsing known hosts file: %s:%d: %v", knownHostsFile, line, err)
 		}
@@ -71,30 +70,24 @@ func Load() ([]Host, error) {
 }
 
 // parseHost parses a line of the known hosts file.
-func parseHost(s string) (Host, error) {
-	fields := strings.Fields(s)
+func parseHost(b []byte) (Host, error) {
+	fields := bytes.Fields(b)
 	if len(fields) != 3 {
 		return Host{}, fmt.Errorf("expected 3 fields; got %d", len(fields))
 	}
 
-	addr, err := netip.ParseAddr(fields[0])
+	addr, err := netip.ParseAddr(string(fields[0]))
 	if err != nil {
 		return Host{}, err
 	}
 
-	var boxPubKey key.BoxPublicKey
-	if hex.DecodedLen(len(fields[1])) != len(boxPubKey) {
-		return Host{}, fmt.Errorf("malformed box public key: %s", fields[1])
-	}
-	if _, err := hex.Decode(boxPubKey[:], []byte(fields[1])); err != nil {
+	boxPubKey, err := key.DecodeBoxPublicKey(fields[1])
+	if err != nil {
 		return Host{}, err
 	}
 
-	var sigPubKey key.SigPublicKey
-	if hex.DecodedLen(len(fields[2])) != len(sigPubKey) {
-		return Host{}, fmt.Errorf("malformed signature public key: %s", fields[2])
-	}
-	if _, err := hex.Decode(sigPubKey[:], []byte(fields[2])); err != nil {
+	sigPubKey, err := key.DecodeSigPublicKey(fields[2])
+	if err != nil {
 		return Host{}, err
 	}
 
