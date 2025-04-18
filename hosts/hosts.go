@@ -41,6 +41,20 @@ func Add(host Host) error {
 	return Store(hosts)
 }
 
+// Lookup searches for a host in the known hosts file.
+// If it is not found, a non-nil error is returned.
+func Lookup(hostname netip.Addr) (Host, error) {
+	hosts, err := Load()
+	if err != nil {
+		return Host{}, err
+	}
+	i, ok := slices.BinarySearchFunc(hosts, hostname, cmpHostAddr)
+	if ok {
+		return hosts[i], nil
+	}
+	return Host{}, fmt.Errorf("no such host: %s", hostname)
+}
+
 // Load loads the set of known hosts from disc.
 // The returned list is sorted.
 func Load() ([]Host, error) {
@@ -119,6 +133,10 @@ func cmpHost(a, b Host) int {
 		return x
 	}
 	return a.SigPublicKey.Compare(b.SigPublicKey)
+}
+
+func cmpHostAddr(host Host, addr netip.Addr) int {
+	return host.Addr.Compare(addr)
 }
 
 func (h Host) String() string {
