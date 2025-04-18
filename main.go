@@ -52,6 +52,15 @@ func main() {
 
 // recv pipes data from the remote host to stdout.
 func recv() error {
+	// Load private decryption key.
+	keyring := key.NewKeyring()
+	boxKeypair, err := key.LoadBoxKeypair()
+	if err != nil {
+		return err
+	}
+	keyring.ImportBoxKeypair(boxKeypair)
+
+	// Accept connection from remote host.
 	laddr := net.JoinHostPort("", fmt.Sprintf("%d", port))
 	ln, err := net.Listen(network, laddr)
 	if err != nil {
@@ -59,7 +68,6 @@ func recv() error {
 	}
 	defer ln.Close()
 	util.Logf("listening on %s", laddr)
-
 	conn, err := ln.Accept()
 	if err != nil {
 		return err
@@ -67,7 +75,29 @@ func recv() error {
 	defer conn.Close()
 	util.Logf("accepted connection from %s", conn.RemoteAddr())
 
-	n, err := io.Copy(os.Stdout, conn)
+	// Load remote host's signature verification key.
+	rhost, _, err := net.SplitHostPort(conn.RemoteAddr().String())
+	if err != nil {
+		return err
+	}
+	raddr, err := netip.ParseAddr(rhost)
+	if err != nil {
+		return err
+	}
+	host, err := hosts.Lookup(raddr)
+	if err != nil {
+		return err
+	}
+	keyring.ImportSigPublicKey(host.SigPublicKey)
+
+	// Decrypt and verify stream.
+	_, plaintext, err := saltpack.NewSigncryptOpenStream(conn, keyring, nil)
+	if err != nil {
+		return err
+	}
+
+	// Read data.
+	n, err := io.Copy(os.Stdout, plaintext)
 	util.Logf("received %.2f", units.Bytes(n)*units.B)
 	return err
 }

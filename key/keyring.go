@@ -6,17 +6,17 @@ import (
 	"slices"
 )
 
-type keyring struct {
+type Keyring struct {
 	keyCreator saltpack.EphemeralKeyCreator
 	boxKeys    []BoxKeypair   // list of box keypairs sorted by public key.
 	sigPubKeys []SigPublicKey // sorted list of public verification keys.
 }
 
-func NewKeyring() saltpack.SigncryptKeyring {
-	return new(keyring)
+func NewKeyring() *Keyring {
+	return new(Keyring)
 }
 
-func (ring *keyring) ImportBoxKeypair(pair BoxKeypair) {
+func (ring *Keyring) ImportBoxKeypair(pair BoxKeypair) {
 	i, ok := slices.BinarySearchFunc(ring.boxKeys, pair.Public, cmpBoxKeypairPubKey)
 	if ok {
 		return // key already in keyring.
@@ -24,7 +24,7 @@ func (ring *keyring) ImportBoxKeypair(pair BoxKeypair) {
 	ring.boxKeys = slices.Insert(ring.boxKeys, i, pair)
 }
 
-func (ring *keyring) ImportSigPublicKey(key SigPublicKey) {
+func (ring *Keyring) ImportSigPublicKey(key SigPublicKey) {
 	i, ok := slices.BinarySearchFunc(ring.sigPubKeys, key, cmpSigPublicKey)
 	if ok {
 		return // key already in keyring.
@@ -32,11 +32,11 @@ func (ring *keyring) ImportSigPublicKey(key SigPublicKey) {
 	ring.sigPubKeys = slices.Insert(ring.sigPubKeys, i, key)
 }
 
-func (ring *keyring) CreateEphemeralKey() (saltpack.BoxSecretKey, error) {
+func (ring *Keyring) CreateEphemeralKey() (saltpack.BoxSecretKey, error) {
 	return ring.keyCreator.CreateEphemeralKey()
 }
 
-func (ring *keyring) LookupBoxSecretKey(kids [][]byte) (int, saltpack.BoxSecretKey) {
+func (ring *Keyring) LookupBoxSecretKey(kids [][]byte) (int, saltpack.BoxSecretKey) {
 	for _, kid := range kids {
 		var pub BoxPublicKey
 		if len(kid) != len(pub) {
@@ -51,7 +51,7 @@ func (ring *keyring) LookupBoxSecretKey(kids [][]byte) (int, saltpack.BoxSecretK
 	return -1, nil
 }
 
-func (ring *keyring) LookupBoxPublicKey(kid []byte) saltpack.BoxPublicKey {
+func (ring *Keyring) LookupBoxPublicKey(kid []byte) saltpack.BoxPublicKey {
 	var pub BoxPublicKey
 	if len(kid) != len(pub) {
 		return nil
@@ -64,7 +64,7 @@ func (ring *keyring) LookupBoxPublicKey(kid []byte) saltpack.BoxPublicKey {
 	return ring.boxKeys[i].Public
 }
 
-func (ring *keyring) GetAllBoxSecretKeys() []saltpack.BoxSecretKey {
+func (ring *Keyring) GetAllBoxSecretKeys() []saltpack.BoxSecretKey {
 	secrets := make([]saltpack.BoxSecretKey, len(ring.boxKeys))
 	for i := range ring.boxKeys {
 		secrets[i] = ring.boxKeys[i]
@@ -72,13 +72,13 @@ func (ring *keyring) GetAllBoxSecretKeys() []saltpack.BoxSecretKey {
 	return secrets
 }
 
-func (ring *keyring) ImportBoxEphemeralKey(kid []byte) saltpack.BoxPublicKey {
+func (ring *Keyring) ImportBoxEphemeralKey(kid []byte) saltpack.BoxPublicKey {
 	var pub BoxPublicKey
 	copy(pub[:], kid)
 	return pub
 }
 
-func (ring *keyring) LookupSigningPublicKey(kid []byte) saltpack.SigningPublicKey {
+func (ring *Keyring) LookupSigningPublicKey(kid []byte) saltpack.SigningPublicKey {
 	if len(kid) != len(SigPublicKey{}) {
 		return nil
 	}
