@@ -12,6 +12,24 @@ type SigPublicKey [32]byte
 // SigPrivateKey is a private NaCl signing key.
 type SigPrivateKey [64]byte
 
+// LoadSigKeypair reads the public and private NaCl signature keys from disc,
+// or generates a new keypair if it does not already exist.
+func LoadSigKeypair() (pub SigPublicKey, priv SigPrivateKey, err error) {
+	err = generateSigKeypairIfNotExist()
+	if err != nil {
+		return
+	}
+
+	pub, err = loadKey(sigPubKeyFile, DecodeSigPublicKey)
+	if err != nil {
+		return
+	}
+
+	priv, err = loadKey(sigPrivKeyFile, DecodeSigPrivateKey)
+
+	return
+}
+
 // LoadSigPublicKey reads the public signature verification key from disc,
 // or generates a new keypair if it does not already exist.
 func LoadSigPublicKey() (SigPublicKey, error) {
