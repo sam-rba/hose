@@ -102,3 +102,12 @@ func (pair SigKeypair) GetPublicKey() saltpack.SigningPublicKey {
 	public := [ed25519.PublicKeySize]byte(pair.public)
 	return basic.NewSigningPublicKey(&public)
 }
+
+func (key SigPublicKey) ToKID() []byte {
+	return key[:]
+}
+
+func (key SigPublicKey) Verify(message []byte, signature []byte) error {
+	raw := [ed25519.PublicKeySize]byte(key)
+	return basic.NewSigningPublicKey(&raw).Verify(message, signature)
+}
