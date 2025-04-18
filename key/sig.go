@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"os"
 )
 
 // SigPublicKey is a public NaCl signature verification key.
@@ -22,22 +20,18 @@ func LoadSigPublicKey() (SigPublicKey, error) {
 	if err != nil {
 		return SigPublicKey{}, err
 	}
+	return loadKey(sigPubKeyFile, DecodeSigPublicKey)
+}
 
-	// Open public key file.
-	f, err := os.Open(sigPubKeyFile)
+// LoadSigPrivateKey reads the private signing key from disc,
+// or generates a new keypair if it does not already exist.
+func LoadSigPrivateKey() (SigPrivateKey, error) {
+	// Generate keypair if it doesn't already exist.
+	err := generateSigKeypairIfNotExist()
 	if err != nil {
-		return SigPublicKey{}, err
+		return SigPrivateKey{}, err
 	}
-	defer f.Close()
-
-	// Read key from file.
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		return SigPublicKey{}, err
-	}
-
-	// Decode key.
-	return DecodeSigPublicKey(buf)
+	return loadKey(sigPrivKeyFile, DecodeSigPrivateKey)
 }
 
 func (spk1 SigPublicKey) Compare(spk2 SigPublicKey) int {
@@ -52,6 +46,18 @@ func DecodeSigPublicKey(buf []byte) (SigPublicKey, error) {
 	}
 	if _, err := hex.Decode(key[:], buf); err != nil {
 		return SigPublicKey{}, err
+	}
+	return key, nil
+}
+
+func DecodeSigPrivateKey(buf []byte) (SigPrivateKey, error) {
+	var key SigPrivateKey
+	if hex.DecodedLen(len(buf)) != len(key) {
+		return SigPrivateKey{}, fmt.Errorf("malformed signing key: expected %d bytes; got %d",
+			len(key), hex.DecodedLen(len(buf)))
+	}
+	if _, err := hex.Decode(key[:], buf); err != nil {
+		return SigPrivateKey{}, err
 	}
 	return key, nil
 }

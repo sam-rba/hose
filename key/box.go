@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"os"
 )
 
 // BoxPublicKey is a public NaCl box key.
@@ -46,21 +44,7 @@ func LoadBoxPublicKey() (BoxPublicKey, error) {
 
 // loadBoxKey reads a NaCl box key (public or private)  from the specified file.
 func loadBoxKey(filename string) ([32]byte, error) {
-	// Open file.
-	f, err := os.Open(filename)
-	if err != nil {
-		return [32]byte{}, err
-	}
-	defer f.Close()
-
-	// Read key from file.
-	buf, err := io.ReadAll(f)
-	if err != nil {
-		return [32]byte{}, err
-	}
-
-	// Decode key.
-	return decodeBoxKey(buf)
+	return loadKey(filename, decodeBoxKey)
 }
 
 func (bpk1 BoxPublicKey) Compare(bpk2 BoxPublicKey) int {
