@@ -2,8 +2,11 @@ package key
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"encoding/hex"
 	"fmt"
+	"github.com/keybase/saltpack"
+	"github.com/keybase/saltpack/basic"
 )
 
 // SigPublicKey is a public NaCl signature verification key.
@@ -12,22 +15,30 @@ type SigPublicKey [32]byte
 // SigPrivateKey is a private NaCl signing key.
 type SigPrivateKey [64]byte
 
+type SigKeypair struct {
+	public  SigPublicKey
+	private SigPrivateKey
+}
+
 // LoadSigKeypair reads the public and private NaCl signature keys from disc,
 // or generates a new keypair if it does not already exist.
-func LoadSigKeypair() (pub SigPublicKey, priv SigPrivateKey, err error) {
-	err = generateSigKeypairIfNotExist()
+func LoadSigKeypair() (SigKeypair, error) {
+	err := generateSigKeypairIfNotExist()
 	if err != nil {
-		return
+		return SigKeypair{}, err
 	}
 
-	pub, err = loadKey(sigPubKeyFile, DecodeSigPublicKey)
+	pub, err := loadKey(sigPubKeyFile, DecodeSigPublicKey)
 	if err != nil {
-		return
+		return SigKeypair{}, err
 	}
 
-	priv, err = loadKey(sigPrivKeyFile, DecodeSigPrivateKey)
+	priv, err := loadKey(sigPrivKeyFile, DecodeSigPrivateKey)
+	if err != nil {
+		return SigKeypair{}, err
+	}
 
-	return
+	return SigKeypair{pub, priv}, nil
 }
 
 // LoadSigPublicKey reads the public signature verification key from disc,
@@ -78,4 +89,16 @@ func DecodeSigPrivateKey(buf []byte) (SigPrivateKey, error) {
 		return SigPrivateKey{}, err
 	}
 	return key, nil
+}
+
+func (pair SigKeypair) Sign(message []byte) ([]byte, error) {
+	public := [ed25519.PublicKeySize]byte(pair.public)
+	private := [ed25519.PrivateKeySize]byte(pair.private)
+	key := basic.NewSigningSecretKey(&public, &private)
+	return key.Sign(message)
+}
+
+func (pair SigKeypair) GetPublicKey() saltpack.SigningPublicKey {
+	public := [ed25519.PublicKeySize]byte(pair.public)
+	return basic.NewSigningPublicKey(&public)
 }
