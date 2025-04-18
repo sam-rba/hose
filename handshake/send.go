@@ -31,7 +31,7 @@ func loadKeys() (key.BoxPublicKey, key.SigPublicKey, error) {
 }
 
 func sendKeys(rhost string, boxPubKey key.BoxPublicKey, sigPubKey key.SigPublicKey) error {
-	raddr := net.JoinHostPort(rhost, port)
+	raddr := net.JoinHostPort(rhost, fmt.Sprintf("%d", port))
 	util.Logf("connecting to %s...", raddr)
 	conn, err := dialWithTimeout(network, raddr, timeout)
 	if err != nil {

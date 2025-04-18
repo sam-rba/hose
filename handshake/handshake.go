@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	port    = "60322"
+	port    = 60322
 	network = "tcp"
 
 	timeout       = 1 * time.Minute

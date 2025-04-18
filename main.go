@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/keybase/saltpack"
 	"github.com/keybase/saltpack/basic"
 	"github.com/tonistiigi/units"
@@ -14,6 +13,7 @@ import (
 	"git.samanthony.xyz/hose/handshake"
 	"git.samanthony.xyz/hose/hosts"
 	"git.samanthony.xyz/hose/key"
+	hose_net "git.samanthony.xyz/hose/net"
 	"git.samanthony.xyz/hose/util"
 )
 
@@ -61,17 +61,7 @@ func recv() error {
 	keyring.ImportBoxKeypair(boxKeypair)
 
 	// Accept connection from remote host.
-	laddr := net.JoinHostPort("", fmt.Sprintf("%d", port))
-	ln, err := net.Listen(network, laddr)
-	if err != nil {
-		return err
-	}
-	defer ln.Close()
-	util.Logf("listening on %s", laddr)
-	conn, err := ln.Accept()
-	if err != nil {
-		return err
-	}
+	conn, err := hose_net.AcceptConnection(network, port)
 	defer conn.Close()
 	util.Logf("accepted connection from %s", conn.RemoteAddr())
 

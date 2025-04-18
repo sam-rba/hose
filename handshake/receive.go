@@ -12,6 +12,7 @@ import (
 
 	"git.samanthony.xyz/hose/hosts"
 	"git.samanthony.xyz/hose/key"
+	hose_net "git.samanthony.xyz/hose/net"
 	"git.samanthony.xyz/hose/util"
 )
 
@@ -27,7 +28,7 @@ var errVerifyKey = errors.New("host key verification failed")
 // receive receives the public keys of a remote host.
 // The user is asked to verify the keys before they are saved to the known hosts file.
 func receive(rhost string) error {
-	conn, err := acceptConnection()
+	conn, err := hose_net.AcceptConnection(network, port)
 	if err != nil {
 		return err
 	}
@@ -54,17 +55,6 @@ func receive(rhost string) error {
 
 	// Save in known hosts file.
 	return hosts.Add(hosts.Host{raddr, rBoxPubKey, rSigPubKey})
-}
-
-func acceptConnection() (net.Conn, error) {
-	laddr := net.JoinHostPort("", port)
-	ln, err := net.Listen(network, laddr)
-	if err != nil {
-		return nil, err
-	}
-	defer ln.Close()
-	util.Logf("listening on %s", laddr)
-	return ln.Accept()
 }
 
 func receiveKeys(conn net.Conn) (key.BoxPublicKey, key.SigPublicKey, error) {
