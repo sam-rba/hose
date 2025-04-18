@@ -14,23 +14,31 @@ type BoxPublicKey [32]byte
 // BoxPrivateKey is a private NaCl box key.
 type BoxPrivateKey [32]byte
 
+type BoxKeypair struct {
+	Public  BoxPublicKey
+	Private BoxPrivateKey
+}
+
 // LoadBoxKeypair reads the public and private NaCl box keys from disc,
 // or generates a new keypair if it does not already exist.
 // These keys can be used for NaCl box (encryption/decryption) operations.
-func LoadBoxKeypair() (pub BoxPublicKey, priv BoxPrivateKey, err error) {
-	err = generateBoxKeypairIfNotExist()
+func LoadBoxKeypair() (BoxKeypair, error) {
+	err := generateBoxKeypairIfNotExist()
 	if err != nil {
-		return
+		return BoxKeypair{}, err
 	}
 
-	pub, err = loadBoxKey(boxPubKeyFile)
+	pub, err := loadBoxKey(boxPubKeyFile)
 	if err != nil {
-		return
+		return BoxKeypair{}, err
 	}
 
-	priv, err = loadBoxKey(boxPrivKeyFile)
+	priv, err := loadBoxKey(boxPrivKeyFile)
+	if err != nil {
+		return BoxKeypair{}, err
+	}
 
-	return
+	return BoxKeypair{pub, priv}, nil
 }
 
 // LoadBoxPublicKey reads the public NaCl box key from disc,
@@ -85,4 +93,25 @@ func (key BoxPublicKey) ToRawBoxKeyPointer() *saltpack.RawBoxKey {
 
 func (key BoxPublicKey) HideIdentity() bool {
 	return false
+}
+
+func (pair BoxKeypair) Box(receiver saltpack.BoxPublicKey, nonce saltpack.Nonce, msg []byte) []byte {
+	return pair.secretKey().Box(receiver, nonce, msg)
+}
+
+func (pair BoxKeypair) Unbox(sender saltpack.BoxPublicKey, nonce saltpack.Nonce, msg []byte) ([]byte, error) {
+	return pair.secretKey().Unbox(sender, nonce, msg)
+}
+
+func (pair BoxKeypair) GetPublicKey() saltpack.BoxPublicKey {
+	return pair.Public
+}
+
+func (pair BoxKeypair) Precompute(peer saltpack.BoxPublicKey) saltpack.BoxPrecomputedSharedKey {
+	return pair.secretKey().Precompute(peer)
+}
+
+func (pair BoxKeypair) secretKey() saltpack.BoxSecretKey {
+	pub, sec := [32]byte(pair.Public), [32]byte(pair.Private)
+	return basic.NewSecretKey(&pub, &sec)
 }
