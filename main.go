@@ -54,11 +54,9 @@ func main() {
 func recv() error {
 	// Load private decryption key.
 	keyring := key.NewKeyring()
-	boxKeypair, err := key.LoadBoxKeypair()
-	if err != nil {
+	if err := loadBoxKeypair(keyring); err != nil {
 		return err
 	}
-	keyring.ImportBoxKeypair(boxKeypair)
 
 	// Accept connection from remote host.
 	conn, err := hose_net.AcceptConnection(network, port)
@@ -66,15 +64,7 @@ func recv() error {
 	util.Logf("accepted connection from %s", conn.RemoteAddr())
 
 	// Load remote host's signature verification key.
-	rhost, _, err := net.SplitHostPort(conn.RemoteAddr().String())
-	if err != nil {
-		return err
-	}
-	raddr, err := netip.ParseAddr(rhost)
-	if err != nil {
-		return err
-	}
-	host, err := hosts.Lookup(raddr)
+	host, err := lookupHost(conn)
 	if err != nil {
 		return err
 	}
@@ -90,6 +80,29 @@ func recv() error {
 	n, err := io.Copy(os.Stdout, plaintext)
 	util.Logf("received %.2f", units.Bytes(n)*units.B)
 	return err
+}
+
+// loadBoxKeypair reads the local encryption/decryption keypair from disc and imports it into the keyring.
+func loadBoxKeypair(keyring *key.Keyring) error {
+	boxKeypair, err := key.LoadBoxKeypair()
+	if err != nil {
+		return err
+	}
+	keyring.ImportBoxKeypair(boxKeypair)
+	return nil
+}
+
+// lookupHost searches for a remote host in the known hosts file.
+func lookupHost(conn net.Conn) (hosts.Host, error) {
+	rhost, _, err := net.SplitHostPort(conn.RemoteAddr().String())
+	if err != nil {
+		return hosts.Host{}, err
+	}
+	raddr, err := netip.ParseAddr(rhost)
+	if err != nil {
+		return hosts.Host{}, err
+	}
+	return hosts.Lookup(raddr)
 }
 
 // send pipes data from stdin to the remote host.
