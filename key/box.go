@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"github.com/keybase/saltpack"
+	"github.com/keybase/saltpack/basic"
 )
 
 // BoxPublicKey is a public NaCl box key.
@@ -66,4 +68,21 @@ func decodeBoxKey(buf []byte) ([32]byte, error) {
 		return [32]byte{}, err
 	}
 	return key, nil
+}
+
+func (key BoxPublicKey) ToKID() []byte {
+	return key[:]
+}
+
+func (key BoxPublicKey) CreateEphemeralKey() (saltpack.BoxSecretKey, error) {
+	return basic.EphemeralKeyCreator{}.CreateEphemeralKey()
+}
+
+func (key BoxPublicKey) ToRawBoxKeyPointer() *saltpack.RawBoxKey {
+	raw := saltpack.RawBoxKey(key)
+	return &raw
+}
+
+func (key BoxPublicKey) HideIdentity() bool {
+	return false
 }
