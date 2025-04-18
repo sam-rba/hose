@@ -2,17 +2,23 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"github.com/keybase/saltpack"
+	"github.com/keybase/saltpack/basic"
 	"github.com/tonistiigi/units"
 	"io"
 	"net"
+	"net/netip"
 	"os"
 
 	"git.samanthony.xyz/hose/handshake"
+	"git.samanthony.xyz/hose/hosts"
+	"git.samanthony.xyz/hose/key"
 	"git.samanthony.xyz/hose/util"
 )
 
 const (
-	port    = "60321"
+	port    = 60321
 	network = "tcp"
 	usage   = "Usage: hose <-handshake <rhost> | -r | -s <rhost>>"
 )
@@ -46,7 +52,7 @@ func main() {
 
 // recv pipes data from the remote host to stdout.
 func recv() error {
-	laddr := net.JoinHostPort("", port)
+	laddr := net.JoinHostPort("", fmt.Sprintf("%d", port))
 	ln, err := net.Listen(network, laddr)
 	if err != nil {
 		return err
@@ -67,17 +73,54 @@ func recv() error {
 }
 
 // send pipes data from stdin to the remote host.
-func send(rhost string) error {
-	raddr := net.JoinHostPort(rhost, port)
-	util.Logf("connecting to %s...", raddr)
-	conn, err := net.Dial(network, raddr)
+func send(rHostName string) error {
+	var keyCreator basic.EphemeralKeyCreator
+
+	// Load sender signing keypair.
+	util.Logf("loading signing key")
+	sigKeypair, err := key.LoadSigKeypair()
+	if err != nil {
+		return err
+	}
+
+	// Create symmetric session key.
+	sessionKey, err := key.NewReceiverSymmetricKey()
+	if err != nil {
+		return err
+	}
+
+	// Load receiver encryption key.
+	util.Logf("loading encryption key for %s", rHostName)
+	rAddr, err := netip.ParseAddr(rHostName)
+	if err != nil {
+		return err
+	}
+	rHost, err := hosts.Lookup(rAddr)
+	if err != nil {
+		return err
+	}
+
+	// Connect to remote host.
+	rAddrPort := netip.AddrPortFrom(rAddr, port)
+	util.Logf("connecting to %s", rAddrPort)
+	conn, err := net.Dial(network, rAddrPort.String())
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
-	util.Logf("connected to %s", raddr)
 
-	n, err := io.Copy(conn, os.Stdin)
+	// Create signcrypted stream.
+	util.Logf("signcrypting stream")
+	rcvrBoxKeys := []saltpack.BoxPublicKey{rHost.BoxPublicKey}
+	rcvrSymmetricKeys := []saltpack.ReceiverSymmetricKey{sessionKey}
+	plaintext, err := saltpack.NewSigncryptSealStream(conn, keyCreator, sigKeypair, rcvrBoxKeys, rcvrSymmetricKeys)
+	if err != nil {
+		return err
+	}
+	defer plaintext.Close()
+
+	// Send data.
+	n, err := io.Copy(plaintext, os.Stdin)
 	util.Logf("sent %.2f", units.Bytes(n)*units.B)
 	return err
 }

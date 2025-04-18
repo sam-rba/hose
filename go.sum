@@ -2,6 +2,10 @@ code.cloudfoundry.org/bytefmt v0.29.0 h1:QaKuXtEY+gcSd1kXgdBN5U8h3mYmTvI2XyNh/5j
 code.cloudfoundry.org/bytefmt v0.29.0/go.mod h1:fVVUtTfimWCyT90RyJvmwZ0o8Q1d51RP8ByMvyceOXA=
 github.com/adrg/xdg v0.5.3 h1:xRnxJXne7+oWDatRhR1JLnvuccuIeCoBu2rtuLqQB78=
 github.com/adrg/xdg v0.5.3/go.mod h1:nlTsY+NNiCBGCK2tpm09vRqfVzrc2fLmXGpBLF0zlTQ=
+github.com/keybase/go-codec v0.0.0-20180928230036-164397562123 h1:yg56lYPqh9suJepqxOMd/liFgU/x+maRPiB30JNYykM=
+github.com/keybase/go-codec v0.0.0-20180928230036-164397562123/go.mod h1:r/eVVWCngg6TsFV/3HuS9sWhDkAzGG8mXhiuYA+Z/20=
+github.com/keybase/saltpack v0.0.0-20250124001807-83b98d5a6acc h1:/rG0QRbjq8mquwE5pXPiCVDbwv6WfmPwUL/SWpI0Jw8=
+github.com/keybase/saltpack v0.0.0-20250124001807-83b98d5a6acc/go.mod h1:kRahN9ZYWfpRaXu0czVmfvqXuzKoMKEEXM3pCd+KRJQ=
 github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea h1:SXhTLE6pb6eld/v/cCndK0AMpt1wiVFb/YYmqB3/QG0=
 github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea/go.mod h1:WPnis/6cRcDZSUvVmezrxJPkiO87ThFYsoUiMwWNDJk=
 golang.org/x/crypto v0.37.0 h1:kJNSjF/Xp7kU0iB2Z+9viTPMW4EqqsrywMXLJOOsXSE=
