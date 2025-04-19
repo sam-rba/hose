@@ -32,7 +32,7 @@ func Add(host Host) error {
 
 	i, ok := slices.BinarySearchFunc(hosts, host, cmpHost)
 	if ok {
-		util.Logf("replacing host %q in known hosts file")
+		util.Logf("replacing host %q in known hosts file", host.Addr)
 		hosts[i] = host
 	} else {
 		hosts = slices.Insert(hosts, i, host)
