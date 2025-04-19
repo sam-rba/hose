@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/keybase/saltpack"
 	"github.com/keybase/saltpack/basic"
 	"github.com/tonistiigi/units"
@@ -124,7 +125,7 @@ func send(rHostName string) error {
 
 	// Load receiver encryption key.
 	util.Logf("loading encryption key for %s", rHostName)
-	rAddr, err := netip.ParseAddr(rHostName)
+	rAddr, err := resolve(rHostName)
 	if err != nil {
 		return err
 	}
@@ -156,4 +157,22 @@ func send(rHostName string) error {
 	n, err := io.Copy(plaintext, os.Stdin)
 	util.Logf("sent %.2f", units.Bytes(n)*units.B)
 	return err
+}
+
+// resolve resolves the address of a host.
+// Host can either be the name of a host, or an IP address.
+func resolve(host string) (netip.Addr, error) {
+	if addr, err := netip.ParseAddr(host); err == nil {
+		// Host is an IP address.
+		return addr, nil
+	}
+
+	// Host is a hostname; resolve its address.
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		return netip.Addr{}, err
+	} else if len(addrs) < 1 {
+		return netip.Addr{}, fmt.Errorf("no such host %s", host)
+	}
+	return netip.ParseAddr(addrs[0])
 }
