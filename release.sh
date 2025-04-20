@@ -1,4 +1,4 @@
-version=$(git describe --tags)
+version=$(git describe --tags --abbrev=0)
 
 gooses=(darwin linux windows)
 goarches=(amd64 arm64)
