@@ -79,7 +79,7 @@ func recv() error {
 
 	// Read data.
 	n, err := io.Copy(os.Stdout, plaintext)
-	util.Logf("received %.2f", units.Bytes(n)*units.B)
+	util.Logf("received %#.2f", units.Bytes(n)*units.B)
 	return err
 }
 
@@ -155,7 +155,7 @@ func send(rHostName string) error {
 
 	// Send data.
 	n, err := io.Copy(plaintext, os.Stdin)
-	util.Logf("sent %.2f", units.Bytes(n)*units.B)
+	util.Logf("sent %#.2f", units.Bytes(n)*units.B)
 	return err
 }
 
